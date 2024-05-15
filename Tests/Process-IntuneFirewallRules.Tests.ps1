@@ -1,6 +1,25 @@
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Public\IntuneFirewallRule.ps1"
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Private\Process-IntuneFirewallRules.ps1"
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Private\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\..\Intune-FWRules-Migration\Public\IntuneFirewallRule.ps1"
+. "$($PathToScript)\..\Intune-FWRules-Migration\Private\Process-IntuneFirewallRules.ps1"
+. "$($PathToScript)\..\Intune-FWRules-Migration\Private\Strings.ps1"
 
 Describe "Test-IntuneFirewallRuleSplit" {
     It "Should return True if serviceName, filePath, and packageFamilyName are filled" {

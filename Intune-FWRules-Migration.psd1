@@ -9,25 +9,25 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'FirewallRuleMigration.psm1'
+RootModule = 'Intune-FWRules-Migration.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0'
+ModuleVersion = '0.1'
 
 # ID used to uniquely identify this module
-GUID = 'c2f80199-864d-4dec-8c16-ed4952f8853c'
+GUID = '3f3a41b2-6dc6-463e-ac9e-1d7e1b7f4553'
 
 # Author of this module
-Author = 'Kevin Hui and Tessy Emadoye'
+Author = 'Nick Benton, Kevin Hui and Tessy Emadoye'
 
 # Company or vendor of this module
-CompanyName = 'Microsoft'
+CompanyName = 'MEM v ENNBEE'
 
 # Copyright statement for this module
-Copyright = '(c) 2019 Microsoft. All rights reserved.'
+Copyright = '(c) 2024 MEM v ENNBEE. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'PowerShell cmdlet suite to support automation of migrating Windows firewall rules to Microsoft Intune'
+Description = 'PowerShell cmdlet suite to support automation of migrating Windows firewall rules to Microsoft Intune using new authentication method and rule profiles.'
 
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @("Microsoft.Graph", "ImportExcel")
@@ -75,4 +75,3 @@ CmdletsToExport = @('Get-SampleFirewallData','Export-NetFirewallRule', 'Send-Int
 # DefaultCommandPrefix = ''
 
 }
-

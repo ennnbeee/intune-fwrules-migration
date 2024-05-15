@@ -1,6 +1,25 @@
-. "$PSScriptRoot\..\Public\IntuneFirewallRule.ps1"
-. "$PSScriptRoot\Use-HelperFunctions.ps1"
-. "$PSScriptRoot\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\..\Public\IntuneFirewallRule.ps1"
+. "$($PathToScript)\Use-HelperFunctions.ps1"
+. "$($PathToScript)\Strings.ps1"
 
 # This file contains helper functions that deal with parsing IntuneFirewallRule objects.
 

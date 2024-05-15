@@ -12,29 +12,27 @@ if (!$principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
 
 #----------------------------------------------------------------------------------------------C:\Users\t-oktess\Documents\powershellproject
-if (-not(Test-Path '.\Intune-PowerShell-Management.zip')) {
+if (-not(Test-Path '.\intune-fwrules-migration.zip')) {
     #Download a zip file which has other required files from the public repo on github
-    Invoke-WebRequest -Uri 'https://github.com/microsoft/Intune-PowerShell-Management/archive/master.zip' -OutFile '.\Intune-PowerShell-Management.zip'
+    Invoke-WebRequest -Uri 'https://github.com/ennnbeee/intune-fwrules-migration/raw/intune-fwrules-migration.zip' -OutFile '.\intune-fwrules-migration.zip'
 
     #Unblock the files especially since they are download from the internet
-    Get-ChildItem '.\Intune-PowerShell-Management.zip' -Recurse -Force | Unblock-File
+    Get-ChildItem '.\intune-fwrules-migration.zip' -Recurse -Force | Unblock-File
 
     #Unzip the files into the current direectory
-    Expand-Archive -LiteralPath '.\Intune-PowerShell-Management.zip' -DestinationPath '.\'
+    Expand-Archive -LiteralPath '.\intune-fwrules-migration.zip' -DestinationPath '.\'
 }
 #----------------------------------------------------------------------------------------------
 
 ## check for running from correct folder location
 
-
-
-
-Import-Module '.\Intune-PowerShell-Management-master\Scenario Modules\IntuneFirewallRulesMigration\FirewallRulesMigration.psm1'
-. '.\Intune-PowerShell-Management-master\Scenario Modules\IntuneFirewallRulesMigration\IntuneFirewallRulesMigration\Private\Strings.ps1'
+Import-Module '.\FirewallRulesMigration.psm1'
+. '.\Intune-FWRules-Migration\Private\Strings.ps1'
 
 $profileName = ''
 try {
-    $json = Invoke-MSGraphRequest -Url "https://graph.microsoft.com/beta/deviceManagement/intents?$filter=templateId%20eq%20%274b219836-f2b1-46c6-954d-4cd2f4128676%27%20or%20templateId%20eq%20%274356d05c-a4ab-4a07-9ece-739f7c792910%27%20or%20templateId%20eq%20%275340aa10-47a8-4e67-893f-690984e4d5da%27" -HttpMethod GET
+    $uri = 'https://graph.microsoft.com/beta/deviceManagement/configurationPolicies?$filter=templateReference/TemplateFamily%20eq%20%27endpointSecurityFirewall%27'
+    $json = Invoke-MgGraphRequest -Uri $uri -Method Get
     $profiles = $json.value
     $profileNameExist = $true
     $profileName = Read-Host -Prompt $Strings.EnterProfile
@@ -43,7 +41,7 @@ try {
     }
     while ($profileNameExist) {
         foreach ($display in $profiles) {
-            $name = $display.displayName.Split('-')
+            $name = $display.name.Split('-')
             $profileNameExist = $false
             if ($name[0] -eq $profileName) {
                 $profileNameExist = $true

@@ -1,5 +1,24 @@
-. "$PSScriptRoot\Use-HelperFunctions.ps1"
-. "$PSScriptRoot\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\Use-HelperFunctions.ps1"
+. "$($PathToScript)\Strings.ps1"
 
 # Helper functions used for extracting various pieces of information from a firewall rule.
 # The values found internally in firewall objects when accessing them from a host were found from this link:
@@ -110,7 +129,7 @@ function Get-FirewallPackageFamilyName {
     # user interaction is required.
     If ($appFilterInstance.Package -and -not $packageSidLookup.ContainsKey($appFilterInstance.Package)) {
          Throw [ExportFirewallRuleException]::new($Strings.FirewallRulePackageFamilyNameException, $Strings.FirewallRulePackageFamilyName)
-        
+
     }
     return $packageSidLookup[$appFilterInstance.Package]
 }
@@ -313,7 +332,7 @@ function Get-FirewallPortRangeMapping {
         [String]
         $protocol
     )
-    # only rules using TCP and UDP protocol can have port numbers on intune 
+    # only rules using TCP and UDP protocol can have port numbers on intune
     # https://docs.microsoft.com/en-us/graph/api/resources/intune-deviceconfig-windowsfirewallrule?view=graph-rest-beta
     if($protocol -eq "TCP" -or $protocol -eq "UDP"){
         If ($port -eq "") {
@@ -352,7 +371,7 @@ function Get-FirewallPortRangeMapping {
     {
         return @()
     }
-    
+
     # Any other type of strings may also be encountered that may not be supported by Graph
     Throw [ExportFirewallRuleException]::new($($Strings.FirewallRulePortRangeException -f $port), $exportType)
 }
@@ -423,7 +442,7 @@ function Get-useAnyRemoteAddressRangeOption{
         [Parameter(Mandatory = $true)]
         $firewallObject
     )
-    $addressFilter = Get-NetFirewallAddressFilterWrapper -AssociatedNetFirewallRule $firewallObject  
+    $addressFilter = Get-NetFirewallAddressFilterWrapper -AssociatedNetFirewallRule $firewallObject
 
     if(Get-FirewallAddressRange -addressRange $addressFilter.RemoteAddress)
     {
@@ -452,8 +471,8 @@ function Get-useAnyLocalAddressRangeOption{
         [Parameter(Mandatory = $true)]
         $firewallObject
     )
-    $addressFilter = Get-NetFirewallAddressFilterWrapper -AssociatedNetFirewallRule $firewallObject  
-      
+    $addressFilter = Get-NetFirewallAddressFilterWrapper -AssociatedNetFirewallRule $firewallObject
+
     if(Get-FirewallAddressRange -addressRange $addressFilter.LocalAddress)
     {
         return $false
@@ -468,7 +487,7 @@ function Test-FirewallRemoteAddressRange{
      <#
     .SYNOPSIS
     Test the address ranges to ensure that they are compatible with intune format
-    Address ranges that are allowed on intune are: 
+    Address ranges that are allowed on intune are:
     "Defaultgateway"
     "DHCP"
     "DNS"
@@ -497,7 +516,7 @@ function Test-FirewallRemoteAddressRange{
     )
     $allowedAddress = @("Defaultgateway", "DHCP", "DNS", "WINS", "Intranet", "RmtIntranet", "Internet", "Ply2Renders", "LocalSubnet")
     $addressSet = New-Object -TypeName 'System.Collections.Generic.HashSet[String]' -ArgumentList (, [String[]]$allowedAddress)
-    
+
     if($addressRange -is [String]){
          #Check the address if it is one of the addresses in the list of suitable addresses in the allowedAddress set
         $addressRangeArray = $addressRange.Split('-')
@@ -514,9 +533,9 @@ function Test-FirewallRemoteAddressRange{
 
                 }
                 catch{
-                     Throw [ExportFirewallRuleException]::new($($Strings.FirewallRuleAddressRangeNoMatchException -f $addressRange), $Strings.FirewallRuleAddressRange) 
-                    
-                
+                     Throw [ExportFirewallRuleException]::new($($Strings.FirewallRuleAddressRangeNoMatchException -f $addressRange), $Strings.FirewallRuleAddressRange)
+
+
                 }
                 if($result){
                     $result = $true
@@ -527,7 +546,7 @@ function Test-FirewallRemoteAddressRange{
             return $addressRange
         }
     }
-    
+
     if($addressRange -is [array]){
         $newaddressRange = @()
         foreach($address in $addressRange)
@@ -546,8 +565,8 @@ function Test-FirewallRemoteAddressRange{
                               $result = $addressArray[0] -match [IpAddress]$addressArray[0]
                          }
                          catch{
-                              Throw [ExportFirewallRuleException]::new($($Strings.FirewallRuleAddressRangeNoMatchException -f $addressRange), $Strings.FirewallRuleAddressRange) 
-                              
+                              Throw [ExportFirewallRuleException]::new($($Strings.FirewallRuleAddressRangeNoMatchException -f $addressRange), $Strings.FirewallRuleAddressRange)
+
                          }
                          if($result){
                              $result = $true

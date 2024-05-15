@@ -1,6 +1,25 @@
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Public\ConvertTo-IntuneFirewallRule.ps1"
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Private\ConvertTo-IntuneFirewallRule-Helper.ps1"
-. "$PSScriptRoot\..\IntuneFirewallRulesMigration\Private\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$PSScriptRoot\..\Intune-FWRules-Migration\Public\ConvertTo-IntuneFirewallRule.ps1"
+. "$PSScriptRoot\..\Intune-FWRules-Migration\Private\ConvertTo-IntuneFirewallRule-Helper.ps1"
+. "$PSScriptRoot\..\Intune-FWRules-Migration\Private\Strings.ps1"
 
 Describe "ConvertTo-IntuneFirewallRule" {
     Context "ConvertTo-IntuneFirewallRule expected cases" {

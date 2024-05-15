@@ -1,3 +1,22 @@
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
 . "$PSScriptRoot\..\Private\Strings.ps1"
 # An intermediate representation of an Intune firewall rule. The official definition of the firewall can be found here:
 # https://docs.microsoft.com/en-us/graph/api/resources/intune-deviceconfig-windowsfirewallrule?view=graph-rest-beta
@@ -19,8 +38,8 @@ class IntuneFirewallRule {
     [String] $localUserAuthorizations
     [Bool] $useAnyRemoteAddressRange
     [Bool] $useAnyLocalAddressRange
-  
-   
+
+
 }
 
 class IntuneFirewallRuleDC {
@@ -57,7 +76,7 @@ function New-IntuneFirewallRuleDC {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param()
-    If ($PSCmdlet.ShouldProcess("", $Strings.NewIntuneFirewallRuleShouldProcessMessage)) {
+    If ($PSCmdlet.ShouldProcess('', $Strings.NewIntuneFirewallRuleShouldProcessMessage)) {
         return New-Object -TypeName IntuneFirewallRuleDC
     }
 }
@@ -77,12 +96,11 @@ function New-IntuneFirewallRule {
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param()
-    If ($PSCmdlet.ShouldProcess("", $Strings.NewIntuneFirewallRuleShouldProcessMessage)) {
+    If ($PSCmdlet.ShouldProcess('', $Strings.NewIntuneFirewallRuleShouldProcessMessage)) {
         return New-Object -TypeName IntuneFirewallRule
     }
 }
-function format-ArrString
-{
+function format-ArrString {
     <#
     .SYNOPSIS
     Properly format arrays to fit the intune firewall rule json format
@@ -96,24 +114,23 @@ function format-ArrString
     Json array string
     #>
     param(
-       
+
         $string
     )
-    if($string){
-    $splitString = ($string -split ",")
-    $JsonString = ConvertTo-Json @($splitString)
-    $replaceCharacters = $JsonString.replace("`r","").replace("`n","").replace(" ","")
-    
-    return $replaceCharacters
+    if ($string) {
+        $splitString = ($string -split ',')
+        $JsonString = ConvertTo-Json @($splitString)
+        $replaceCharacters = $JsonString.replace("`r", '').replace("`n", '').replace(' ', '')
+
+        return $replaceCharacters
     }
-    else{
-         return -split(ConvertTo-Json @()) -join ""
+    else {
+        return -split (ConvertTo-Json @()) -join ''
     }
-    
-   
+
+
 }
-function ConvertTo-IntuneFirewallRuleString
-{
+function ConvertTo-IntuneFirewallRuleString {
     <#
     .SYNOPSIS
     Creates a new Intune firewall string.
@@ -127,7 +144,7 @@ function ConvertTo-IntuneFirewallRuleString
     .OUTPUTS
     Json String
     #>
-    
+
     Param(
         [Parameter(Mandatory = $true)]
         $firewallObject
@@ -135,23 +152,23 @@ function ConvertTo-IntuneFirewallRuleString
 
     return (@'
 {{"displayName":{0},"description":{1},"trafficDirection":{2}, "action" :{3},"profileTypes":{4},"packageFamilyName":{5},"filePath":{6}, "serviceName" : {7},"protocol":{8},"localPortRanges": {9},"remotePortRanges": {10},"interfaceTypes" : {11},"localUserAuthorizations":{12},"useAnyLocalAddressRange": {13},"actualLocalAddressRanges" : {14},"useAnyRemoteAddressRange" :{15},"actualRemoteAddressRanges":{16}}}
-'@ -f  $(if($firewallObject.displayName){$firewallObject.displayName | ConvertTo-Json}else{"`"`""}), 
-       $(if($firewallObject.description){$firewallObject.description | ConvertTo-Json}else{"`"`""}), 
-       $(if($firewallObject.trafficDirection){$firewallObject.trafficDirection | ConvertTo-Json}else{"`"`""}), 
-       $(if($firewallObject.action){$firewallObject.action | ConvertTo-Json}else{"`"notConfigured`""}), 
+'@ -f $(if ($firewallObject.displayName) { $firewallObject.displayName | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.description) { $firewallObject.description | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.trafficDirection) { $firewallObject.trafficDirection | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.action) { $firewallObject.action | ConvertTo-Json }else { "`"notConfigured`"" }),
        (format-ArrString $firewallObject.profileTypes),
-       $(if($firewallObject.packageFamilyName){$firewallObject.packageFamilyName | ConvertTo-Json}else{"`"`""}), 
-       $(if($firewallObject.filePath){ $firewallObject.filePath | ConvertTo-Json}else{"`"`""}), 
-       $(if($firewallObject.serviceName){$firewallObject.serviceName | ConvertTo-Json}else{"`"`""}),
-       $(if($firewallObject.protocol){$firewallObject.protocol}else{"null"}),
+        $(if ($firewallObject.packageFamilyName) { $firewallObject.packageFamilyName | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.filePath) { $firewallObject.filePath | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.serviceName) { $firewallObject.serviceName | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.protocol) { $firewallObject.protocol }else { 'null' }),
        (format-ArrString $firewallObject.localPortRanges),
        (format-ArrString $firewallObject.remotePortRanges),
-       (format-ArrString  $firewallObject.interfaceTypes),
-       $(if($firewallObject.localUserAuthorizations){$firewallObject.localUserAuthorizations | ConvertTo-Json}else{"`"`""}),
-       $(if($firewallObject.useAnyLocalAddressRange){"true"}else{"false"}),
+       (format-ArrString $firewallObject.interfaceTypes),
+        $(if ($firewallObject.localUserAuthorizations) { $firewallObject.localUserAuthorizations | ConvertTo-Json }else { "`"`"" }),
+        $(if ($firewallObject.useAnyLocalAddressRange) { 'true' }else { 'false' }),
        (format-ArrString $firewallObject.actualLocalAddressRanges),
-       $(if($firewallObject.useAnyRemoteAddressRange){"true"}else{"false"}),
+        $(if ($firewallObject.useAnyRemoteAddressRange) { 'true' }else { 'false' }),
        (format-ArrString $firewallObject.actualRemoteAddressRanges)
-       )
+    )
 }
 

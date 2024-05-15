@@ -1,3 +1,22 @@
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
 . "$PSScriptRoot\IntuneFirewallRule.ps1"
 . "$PSScriptRoot\ExportTo-ExcelFile.ps1"
 . "$PSScriptRoot\..\Private\ConvertTo-IntuneFirewallRule-Helper.ps1"
@@ -51,13 +70,13 @@ function ConvertTo-IntuneFirewallRule {
         # If this flag is toggled, then telemetry is automatically sent to Microsoft.
         [switch] $sendConvertTelemetry,
         [switch] $DeviceConfiguration
-       
+
     )
 
     Begin {
         $firewallRules = @()
         $rulesFailedToConvert = @()
-        
+
     }
 
     Process {
@@ -71,7 +90,7 @@ function ConvertTo-IntuneFirewallRule {
         $intuneFirewallRuleObjects = @()
         $choice = ""
         $remainingFirewallRules = $firewallRules.Count
-       
+
         ForEach ($firewallRule in $firewallRules) {
             Try {
                 # remainingFirewallRules is decremented after displaying operation status
@@ -79,8 +98,8 @@ function ConvertTo-IntuneFirewallRule {
                     -remainingObjects $remainingFirewallRules `
                     -totalObjects $firewallRules.Count `
                     -activityMessage $Strings.ConvertToIntuneFirewallRuleProgressMessage
-               
-                
+
+
                 if($DeviceConfiguration){
                     # Processing firewall rule objects for endpoint security
                     $intuneFirewallRuleObject = New-IntuneFirewallRuleDC
@@ -147,7 +166,7 @@ function ConvertTo-IntuneFirewallRule {
                     $intuneFirewallRuleObject.localUserAuthorizations = Get-FirewallLocalUserAuthorization $firewallRule
                     $intuneFirewallRuleObject.useAnyLocalAddressRange = Get-useAnyLocalAddressRangeOption $firewallRule
                     $intuneFirewallRuleObject.useAnyRemoteAddressRange = Get-useAnyRemoteAddressRangeOption $firewallRule
-                
+
                     # Check to see if a firewall rule needs to be split, and prompts the user if they want to split
                     If (Test-IntuneFirewallRuleSplit -firewallObject $intuneFirewallRuleObject) {
 
@@ -172,12 +191,12 @@ function ConvertTo-IntuneFirewallRule {
                 }
             }
             Catch {
-               
+
                 $errorMessage = $_.ToString()
                 $errorType = $_.Exception.GetType().ToString()
                 # If the property does not exist, then the result is simply an empty string
                 $errorFirewallRuleProperty = $_.Exception.firewallRuleProperty
-                
+
                 #-----------------------------------------------------------------------------------------
                 if($sendIntuneFirewallTelemetry)
                 {
@@ -191,12 +210,12 @@ function ConvertTo-IntuneFirewallRule {
                 }
                 #------------------------------------------------------------------------------------------
                 # Choice is the index of the option
-                
+
                 Switch ($choice) {
                     $Strings.Yes {
                         Send-FailureToConvertToIntuneFirewallRuleTelemetry -data $errorMessage `
                             -errorType $errorType `
-                            -firewallRuleProperty $errorFirewallRuleProperty 
+                            -firewallRuleProperty $errorFirewallRuleProperty
                     }
                     $Strings.No { Throw $Strings.ConvertToIntuneFirewallRuleNoException }
                     $Strings.YesToAll {
@@ -219,7 +238,7 @@ function ConvertTo-IntuneFirewallRule {
         }
        $dataTelemetry = "{0}/{1} Firewall rules were successfully converted to IntuneFirewallRuleObjects" -f ($firewallRules.Count - $rulesFailedToConvert.Count), $firewallRules.Count
        # Create an excel file with information about the items that where incompatible with intunes format
-        Export-ExcelFile -fileName "RuleError" -failedToConvert $rulesFailedToConvert 
+        Export-ExcelFile -fileName "RuleError" -failedToConvert $rulesFailedToConvert
         Set-SummaryDetail -numberOfFirewallRules $firewallRules.Count -ConvertedRulesNumber ($firewallRules.Count - $rulesFailedToConvert.Count )
         Send-SuccessCovertToIntuneFirewallRuleTelemetry -data $dataTelemetry
         return $intuneFirewallRuleObjects

@@ -24,9 +24,9 @@ The project has been developed and tested on Windows 10 1903 and with PowerShell
 
 ### Dependencies
 
-This project relies on [Export-FirewallRules.ps1 Script](https://github.com/microsoft/Intune-PowerShell-Management/raw/master/Scenario%20Modules/IntuneFirewallRulesMigration/Export-FirewallRules.zip)
-The script install the other dependencies the project relies on such as the[Intune PowerShell SDK](https://github.com/Microsoft/Intune-PowerShell-SDK) for submitting Graph API calls and the [ImportExcel Module](https://github.com/dfinke/ImportExcel). 
-1. Download and unzip the file [Export-FirewallRules.zip](https://github.com/microsoft/Intune-PowerShell-Management/raw/master/Scenario%20Modules/IntuneFirewallRulesMigration/Export-FirewallRules.zip). 
+This project relies on [Export-FirewallRules.ps1 Script](https://github.com/microsoft/Intune-PowerShell-Management/raw/master/Scenario%20Modules/Intune-FWRules-Migration/Export-FirewallRules.zip)
+The script install the other dependencies the project relies on such as the[Intune PowerShell SDK](https://github.com/Microsoft/Intune-PowerShell-SDK) for submitting Graph API calls and the [ImportExcel Module](https://github.com/dfinke/ImportExcel).
+1. Download and unzip the file [Export-FirewallRules.zip](https://github.com/microsoft/Intune-PowerShell-Management/raw/master/Scenario%20Modules/Intune-FWRules-Migration/Export-FirewallRules.zip).
 2. Open a powershell session with administrative priviledge and run the script.
 
 ```PowerShell
@@ -78,20 +78,20 @@ By default, the `Export-FirewallRule.ps1` will export and send only  Group Polic
 Export-FirewallRule.ps1
 ```
 - If a firewall rule has an attribute that is known to be incompatible with Intune beforehand. The tool will raise an exception, send telemetry data to Intune if permitted and automatically progress .
-Once the tool has run, a report will be generated with rules that were not successfully migrated. You can view any of these rules by viewing RulesError.xlsx found in .\logs.  
+Once the tool has run, a report will be generated with rules that were not successfully migrated. You can view any of these rules by viewing RulesError.xlsx found in .\logs.
 
-The following setting values are not supported for migration: 
+The following setting values are not supported for migration:
 
-#### Ports 
+#### Ports
 
-PlayToDiscovery is not supported as a local or remote port range  
+PlayToDiscovery is not supported as a local or remote port range
 
 
-#### Address ranges  
+#### Address ranges
 
-LocalSubnet6 is not supported as a local or remote address range  
-LocalSubnet4 is not supported as a local or remote address range 
-PlayToDevice is not supported as a local or remote address range 
+LocalSubnet6 is not supported as a local or remote address range
+LocalSubnet4 is not supported as a local or remote address range
+PlayToDevice is not supported as a local or remote address range
 
 ### Telemetry
 

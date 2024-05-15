@@ -1,6 +1,25 @@
-. "$PSScriptRoot\ConvertTo-IntuneFirewallRule.ps1"
-. "$PSScriptRoot\Get-SampleFirewallData.ps1"
-. "$PSScriptRoot\..\Private\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\ConvertTo-IntuneFirewallRule.ps1"
+. "$($PathToScript)\Get-SampleFirewallData.ps1"
+. "$($PathToScript)\..\Private\Strings.ps1"
 
 function Export-NetFirewallRule {
     <#
@@ -43,7 +62,7 @@ function Export-NetFirewallRule {
         # Defines the policy store source to pull net firewall rules from.
         [ValidateSet("GroupPolicy", "All")]
         [string] $PolicyStoreSource = "GroupPolicy",
-        # If this switch is toggled, only the firewall rules that are currently enabled are imported 
+        # If this switch is toggled, only the firewall rules that are currently enabled are imported
         [boolean]
         $EnabledOnly =$True,
         # This determines if we are running a test version or a full importation. The default value is full. The test version imports only 20 rules
@@ -60,13 +79,13 @@ function Export-NetFirewallRule {
         # If this flag is toogled, then firewall rules would be imported to Device Configuration else it would be import to Endpoint Security
         [Switch]
         $DeviceConfiguration
-        
 
-         
+
+
     )
         if($CheckProfileName -eq $true)
         {
-            
+
             try
             {
                 $json = Invoke-MSGraphRequest -Url "https://graph.microsoft.com/beta/deviceManagement/intents?$filter=templateId%20eq%20%274b219836-f2b1-46c6-954d-4cd2f4128676%27%20or%20templateId%20eq%20%274356d05c-a4ab-4a07-9ece-739f7c792910%27%20or%20templateId%20eq%20%275340aa10-47a8-4e67-893f-690984e4d5da%27" -HttpMethod GET
@@ -74,7 +93,7 @@ function Export-NetFirewallRule {
                 $profileNameExist = $true
                 while($profileNameExist)
                 {
-                    
+
                     foreach($display in $profiles)
                     {
                         $name = $display.displayName.Split("-")
@@ -85,7 +104,7 @@ function Export-NetFirewallRule {
                             $profileName = Read-Host -Prompt $Strings.ProfileExists
                             while(-not($profileName))
                             {
-                                $profileName = Read-Host -Prompt  $Strings.ProfileCannotBeBlank  
+                                $profileName = Read-Host -Prompt  $Strings.ProfileCannotBeBlank
                             }
                             break
                         }
@@ -94,13 +113,13 @@ function Export-NetFirewallRule {
             }
             catch{
                 $errorMessage = $_.ToString()
-            
+
                 Write-Error $errorMessage
                 return
             }
 
         }
-        
+
         $sendTelemetryTitle = $Strings.TelemetryPromptTitle
         $sendTelemetryPromptMessage = $Strings.TelemetryPromptMessage
         $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", $Strings.TelemetryPromptSendYes
@@ -117,7 +136,7 @@ function Export-NetFirewallRule {
             1{$sendExportTelemetry = $False}
         }
 
-        
+
             # The default behavior for Get-NetFirewallRule is to retrieve all WDFWAS firewall rules
         return $(Get-FirewallData -Enabled:$EnabledOnly -Mode:$Mode -PolicyStoreSource:$PolicyStoreSource| ConvertTo-IntuneFirewallRule `
                 -doNotsplitConflictingAttributes:$doNotsplitConflictingAttributes `
@@ -128,5 +147,5 @@ function Export-NetFirewallRule {
                 -sendIntuneFirewallTelemetry:$sendExportTelemetry `
                 -DeviceConfiguration:$DeviceConfiguration
                 )
-        
+
 }

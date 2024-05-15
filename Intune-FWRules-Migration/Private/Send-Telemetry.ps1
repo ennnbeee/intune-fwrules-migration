@@ -1,5 +1,24 @@
-. "$PSScriptRoot\Use-HelperFunctions.ps1"
-. "$PSScriptRoot\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\Use-HelperFunctions.ps1"
+. "$($PathToScript)\Strings.ps1"
 function Send-FailureToConvertToIntuneFirewallRuleTelemetry {
     <#
     .SYNOPSIS
@@ -36,8 +55,8 @@ function Send-SuccessCovertToIntuneFirewallRuleTelemetry {
     )
     Send-SuccessTelemetry -data $data `
     -category $Strings.TelemetrySuccessfullyConvertedToIntuneFirewallRule `
-   
-    
+
+
 }
 
 function Send-SuccessIntuneFirewallGraphTelemetry {
@@ -48,7 +67,7 @@ function Send-SuccessIntuneFirewallGraphTelemetry {
     )
     Send-SuccessTelemetry -data $data `
         -category $Strings.TelemetryIntuneFirewallRuleGraphImportSuccess
-    
+
 }
 
 function Send-IntuneFirewallGraphTelemetry {
@@ -120,14 +139,14 @@ function Send-FailureTelemetry {
     $logger.LogFailure($Strings.TelemetrySignature, $Strings.TelemetryError, $category, $Strings.TelemetryId, $eventProperties)
 }
 function Send-SuccessTelemetry {
-    
+
     Param(
         [Parameter(Mandatory = $true)]
         [String]
         $data,
         [Parameter(Mandatory = $true)]
         [String]
-        $category 
+        $category
     )
 
     Initialize-Telemetry
@@ -143,7 +162,7 @@ function Send-SuccessTelemetry {
     $logger = [Microsoft.Applications.Telemetry.Server.LogManager]::GetLogger()
     # LogEvent() sends telemetry for an event that occured. Since the [Microsoft.Applications.Telemetry.Server.LogManager] class
     # does not have a function to send telemetry for success. LogEvent works
-    
+
     $logger.LogEvent($eventProperties)
 }
 function Get-IntuneFirewallRuleErrorTelemetryChoice {

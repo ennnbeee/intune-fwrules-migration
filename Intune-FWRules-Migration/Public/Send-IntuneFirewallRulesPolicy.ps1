@@ -1,7 +1,26 @@
-. "$PSScriptRoot\IntuneFirewallRule.ps1"
-. "$PSScriptRoot\..\Private\Send-Telemetry.ps1"
-. "$PSScriptRoot\..\Private\Use-HelperFunctions.ps1"
-. "$PSScriptRoot\..\Private\Strings.ps1"
+# Debugging
+$PathToScript = if ( $PSScriptRoot ) {
+    # Console or vscode debug/run button/F5 temp console
+    $PSScriptRoot
+}
+Else {
+    if ( $psISE ) { Split-Path -Path $psISE.CurrentFile.FullPath }
+    else {
+        if ($profile -match 'VScode') {
+            # vscode "Run Code Selection" button/F8 in integrated console
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        }
+        else {
+            Write-Output 'unknown directory to set path variable. exiting script.'
+            break
+        }
+    }
+}
+
+. "$($PathToScript)\IntuneFirewallRule.ps1"
+. "$($PathToScript)\..\Private\Send-Telemetry.ps1"
+. "$($PathToScript)\..\Private\Use-HelperFunctions.ps1"
+. "$($PathToScript)\..\Private\Strings.ps1"
 
 $ProfileFirewallRuleLimit = 150
 # Sends Intune Firewall objects out to the Intune Powershell SDK
@@ -78,11 +97,11 @@ a
         ForEach ($firewall in $firewallArr) {
             If ($currentProfile.Count -ge $ProfileFirewallRuleLimit) {
                 # Arrays may be "unrolled", so we need to enforce no unrolling
-                $profiles += , $currentProfile 
+                $profiles += , $currentProfile
                 $currentProfile = @()
             }
             $currentProfile += $firewall
-            
+
         }
         If ($currentProfile.Count -gt 0 ) {
             # Arrays may be "unrolled", so we need to enforce no unrolling
@@ -99,7 +118,7 @@ a
         {
            $item = New-Item "./logs" -ItemType Directory
         }
-       
+
         ForEach ($profile in $profiles) {
             # remainingProfiles is decremented after displaying operation status
             $remainingProfiles = Show-OperationProgress `
@@ -140,13 +159,13 @@ a
                                     `"settingsDelta`" : [{
                                                         `"@odata.type`": `"#microsoft.graph.deviceManagementCollectionSettingInstance`",
                                                         `"definitionId`" : `"deviceConfiguration--windows10EndpointProtectionConfiguration_firewallRules`",
-                                                        `"valueJson`" : $profileJson  
+                                                        `"valueJson`" : $profileJson
                                                     }]
                                     }"
             }
             If ($PSCmdlet.ShouldProcess($NewIntuneObject, $Strings.SendIntuneFirewallRulesPolicyShouldSendData)) {
                 Try {
-                    
+
                     if($DeviceConfiguration){
                         $successResponse = Invoke-MSGraphRequest -Url 'https://graph.microsoft.com/beta/devicemanagement/deviceconfigurations/' -HttpMethod POST -Content $NewIntuneObject
                         $successMessage = "`r`n$migratedProfileName-$profileNumber has been successfully imported to Intune (Device Configuration)`r`n"
@@ -155,20 +174,20 @@ a
                         $successResponse = Invoke-MSGraphRequest -Url "https://graph.microsoft.com/beta/deviceManagement/templates/4356d05c-a4ab-4a07-9ece-739f7c792910/createInstance" -HttpMethod POST -Content $NewIntuneObject
                         $successMessage = "`r`n$migratedProfileName-$profileNumber has been successfully imported to Intune (End-Point Security)`r`n"
                     }
-                     
+
 
                     Write-Verbose $successResponse
                     Write-Verbose  $NewIntuneObject
                     Add-Content  $responsePath "`r `n $date `r `n $s$successMessage `r `n $successResponse"
-            
-                    
+
+
                     $profileNumber++
                     $sentSuccessfully += Get-ExcelFormatObject -intuneFirewallObjects $profile
-                    
+
                 }
                 Catch {
 
-                    
+
                     # Intune Graph errors are telemetry points that can detect payload mistakes
                     $errorMessage = $_.ToString()
                     $errorType = $_.Exception.GetType().ToString()
@@ -182,7 +201,7 @@ a
                     {
                          $choice = $Strings.Continue
                     }
-                   
+
                     switch ($choice) {
                         $Strings.Yes { Send-IntuneFirewallGraphTelemetry -data $errorMessage }
                         $Strings.No { Throw $Strings.SendIntuneFirewallRulesPolicyException }
@@ -193,18 +212,18 @@ a
                         $Strings.Continue { continue }
                     }
                     $failedToSend += Get-ExcelFormatObject -intuneFirewallObjects $profile -errorMessage $errorMessage
-                 
+
                     Add-Content $responsePath "`r `n $date `r `n $errorMessage"
                 }
             }
             Add-Content  $payloadPath "`r `n$date `r `n$textHeader `r `n$NewIntuneObject"
         }
-        
+
         $dataTelemetry = "{0}/{1} Intune Firewall Rules were successfully imported to Endpoint-Security" -f $sentSuccessfully.Count, $firewallArr.Count
-        Export-ExcelFile -fileName "Imported_to_Intune" -succeededToSend $sentSuccessfully 
+        Export-ExcelFile -fileName "Imported_to_Intune" -succeededToSend $sentSuccessfully
         Send-SuccessIntuneFirewallGraphTelemetry -data  $dataTelemetry
         Export-ExcelFile -fileName "Failed_to_Import_to_Intune" -failedToSend $failedToSend
-        Set-SummaryDetail -numberOfSplittedRules $firewallArr.Count -ProfileName $migratedProfileName -successCount $sentSuccessfully.Count 
+        Set-SummaryDetail -numberOfSplittedRules $firewallArr.Count -ProfileName $migratedProfileName -successCount $sentSuccessfully.Count
         Get-SummaryDetail
     }
 }
