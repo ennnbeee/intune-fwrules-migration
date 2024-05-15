@@ -17,7 +17,7 @@ Else {
     }
 }
 
-. "$PSScriptRoot\Strings.ps1"
+. "$($PathToScript)\Strings.ps1"
 # This file represents several utility functions that do not belong to telemetry, exporting, or importing alone.
 
 function Show-OperationProgress {

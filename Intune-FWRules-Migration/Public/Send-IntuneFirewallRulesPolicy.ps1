@@ -77,14 +77,14 @@ a
 
     )
 
-    Begin { $firewallArr = @()}
+    Begin { $firewallArr = @() }
 
     # We apply a filter that strips objects of their null attributes so that Graph can
     # apply default values in the absence of set values
     Process {
         $object = $_
         $allProperties = $_.PsObject.Properties.Name
-        $nonNullProperties = $allProperties.Where( { $null -ne $object.$_ -and $object.$_ -ne "" })
+        $nonNullProperties = $allProperties.Where( { $null -ne $object.$_ -and $object.$_ -ne '' })
         $firewallArr += $object | Select-Object $nonNullProperties
     }
 
@@ -111,12 +111,11 @@ a
 
         $remainingProfiles = $profiles.Count
         $date = Get-Date
-        $dateformatted = Get-Date -Format "M_dd_yy"
-        $responsePath = "./logs/http_response "+$dateformatted +".txt"
-        $payloadPath =  "./logs/http_payload "+$dateformatted +".txt"
-        if(-not(Test-Path "./logs"))
-        {
-           $item = New-Item "./logs" -ItemType Directory
+        $dateformatted = Get-Date -Format 'M_dd_yy'
+        $responsePath = './logs/http_response ' + $dateformatted + '.txt'
+        $payloadPath = './logs/http_payload ' + $dateformatted + '.txt'
+        if (-not(Test-Path './logs')) {
+            $item = New-Item './logs' -ItemType Directory
         }
 
         ForEach ($profile in $profiles) {
@@ -126,10 +125,10 @@ a
                 -totalObjects $profiles.Count `
                 -activityMessage $Strings.SendIntuneFirewallRulesPolicyProgressStatus
             #---------------------------------------------------------------------------------
-            $textHeader = ""
-            $NewIntuneObject = ""
-            if($DeviceConfiguration){
-                $textHeader = "Device Configuration Payload"
+            $textHeader = ''
+            $NewIntuneObject = ''
+            if ($DeviceConfiguration) {
+                $textHeader = 'Device Configuration Payload'
                 $profileJson = $profile | ConvertTo-Json
                 $NewIntuneObject = "{
                     `"@odata.type`": `"#microsoft.graph.windows10EndpointProtectionConfiguration`",
@@ -137,19 +136,16 @@ a
                     `"firewallRules`": $profileJson,
                        }"
             }
-            else{
-                $textHeader = "End-Point Security Payload"
-                $profileAsString = "["
-                ForEach($rules in $profile)
-                {
-                        if($profile.IndexOf($rules) -eq $profile.Length - 1)
-                        {
-                            $profileAsString += (ConvertTo-IntuneFirewallRuleString $rules) + "]"
-                        }
-                        else
-                        {
-                            $profileAsString += (ConvertTo-IntuneFirewallRuleString $rules) +","
-                        }
+            else {
+                $textHeader = 'End-Point Security Payload'
+                $profileAsString = '['
+                ForEach ($rules in $profile) {
+                    if ($profile.IndexOf($rules) -eq $profile.Length - 1) {
+                        $profileAsString += (ConvertTo-IntuneFirewallRuleString $rules) + ']'
+                    }
+                    else {
+                        $profileAsString += (ConvertTo-IntuneFirewallRuleString $rules) + ','
+                    }
                 }
                 $profileJson = $profileAsString | ConvertTo-Json
                 $NewIntuneObject = "{
@@ -166,19 +162,19 @@ a
             If ($PSCmdlet.ShouldProcess($NewIntuneObject, $Strings.SendIntuneFirewallRulesPolicyShouldSendData)) {
                 Try {
 
-                    if($DeviceConfiguration){
+                    if ($DeviceConfiguration) {
                         $successResponse = Invoke-MSGraphRequest -Url 'https://graph.microsoft.com/beta/devicemanagement/deviceconfigurations/' -HttpMethod POST -Content $NewIntuneObject
                         $successMessage = "`r`n$migratedProfileName-$profileNumber has been successfully imported to Intune (Device Configuration)`r`n"
                     }
-                    else{
-                        $successResponse = Invoke-MSGraphRequest -Url "https://graph.microsoft.com/beta/deviceManagement/templates/4356d05c-a4ab-4a07-9ece-739f7c792910/createInstance" -HttpMethod POST -Content $NewIntuneObject
+                    else {
+                        $successResponse = Invoke-MSGraphRequest -Url 'https://graph.microsoft.com/beta/deviceManagement/templates/4356d05c-a4ab-4a07-9ece-739f7c792910/createInstance' -HttpMethod POST -Content $NewIntuneObject
                         $successMessage = "`r`n$migratedProfileName-$profileNumber has been successfully imported to Intune (End-Point Security)`r`n"
                     }
 
 
                     Write-Verbose $successResponse
-                    Write-Verbose  $NewIntuneObject
-                    Add-Content  $responsePath "`r `n $date `r `n $s$successMessage `r `n $successResponse"
+                    Write-Verbose $NewIntuneObject
+                    Add-Content $responsePath "`r `n $date `r `n $s$successMessage `r `n $successResponse"
 
 
                     $profileNumber++
@@ -191,15 +187,13 @@ a
                     # Intune Graph errors are telemetry points that can detect payload mistakes
                     $errorMessage = $_.ToString()
                     $errorType = $_.Exception.GetType().ToString()
-                    if($sendIntuneFirewallTelemetry)
-                    {
-                         $choice = Get-IntuneFirewallRuleErrorTelemetryChoice -telemetryMessage $errorMessage `
-                        -sendErrorTelemetryInitialized $sendIntuneFirewallTelemetry `
-                        -telemetryExceptionType $errorType
+                    if ($sendIntuneFirewallTelemetry) {
+                        $choice = Get-IntuneFirewallRuleErrorTelemetryChoice -telemetryMessage $errorMessage `
+                            -sendErrorTelemetryInitialized $sendIntuneFirewallTelemetry `
+                            -telemetryExceptionType $errorType
                     }
-                    else
-                    {
-                         $choice = $Strings.Continue
+                    else {
+                        $choice = $Strings.Continue
                     }
 
                     switch ($choice) {
@@ -216,13 +210,13 @@ a
                     Add-Content $responsePath "`r `n $date `r `n $errorMessage"
                 }
             }
-            Add-Content  $payloadPath "`r `n$date `r `n$textHeader `r `n$NewIntuneObject"
+            Add-Content $payloadPath "`r `n$date `r `n$textHeader `r `n$NewIntuneObject"
         }
 
-        $dataTelemetry = "{0}/{1} Intune Firewall Rules were successfully imported to Endpoint-Security" -f $sentSuccessfully.Count, $firewallArr.Count
-        Export-ExcelFile -fileName "Imported_to_Intune" -succeededToSend $sentSuccessfully
-        Send-SuccessIntuneFirewallGraphTelemetry -data  $dataTelemetry
-        Export-ExcelFile -fileName "Failed_to_Import_to_Intune" -failedToSend $failedToSend
+        $dataTelemetry = '{0}/{1} Intune Firewall Rules were successfully imported to Endpoint-Security' -f $sentSuccessfully.Count, $firewallArr.Count
+        Export-ExcelFile -fileName 'Imported_to_Intune' -succeededToSend $sentSuccessfully
+        Send-SuccessIntuneFirewallGraphTelemetry -data $dataTelemetry
+        Export-ExcelFile -fileName 'Failed_to_Import_to_Intune' -failedToSend $failedToSend
         Set-SummaryDetail -numberOfSplittedRules $firewallArr.Count -ProfileName $migratedProfileName -successCount $sentSuccessfully.Count
         Get-SummaryDetail
     }

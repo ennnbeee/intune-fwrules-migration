@@ -17,13 +17,13 @@ Else {
     }
 }
 
-. "$PSScriptRoot\IntuneFirewallRule.ps1"
-. "$PSScriptRoot\ExportTo-ExcelFile.ps1"
-. "$PSScriptRoot\..\Private\ConvertTo-IntuneFirewallRule-Helper.ps1"
-. "$PSScriptRoot\..\Private\Process-IntuneFirewallRules.ps1"
-. "$PSScriptRoot\..\Private\Send-Telemetry.ps1"
-. "$PSScriptRoot\..\Private\Use-HelperFunctions.ps1"
-. "$PSScriptRoot\..\Private\Strings.ps1"
+. "$($PathToScript)\IntuneFirewallRule.ps1"
+. "$($PathToScript)\ExportTo-ExcelFile.ps1"
+. "$($PathToScript)\..\Private\ConvertTo-IntuneFirewallRule-Helper.ps1"
+. "$($PathToScript)\..\Private\Process-IntuneFirewallRules.ps1"
+. "$($PathToScript)\..\Private\Send-Telemetry.ps1"
+. "$($PathToScript)\..\Private\Use-HelperFunctions.ps1"
+. "$($PathToScript)\..\Private\Strings.ps1"
 
 function ConvertTo-IntuneFirewallRule {
     <#

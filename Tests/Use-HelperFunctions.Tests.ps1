@@ -18,7 +18,7 @@ Else {
 }
 
 . "$($PathToScript)\..\Intune-FWRules-Migration\Private\Use-HelperFunctions.ps1"
-. "$PathToScript\..\Intune-FWRules-Migration\Private\Strings.ps1"
+. "$($PathToScript)\..\Intune-FWRules-Migration\Private\Strings.ps1"
 
 Describe "Show-OperationProgress" {
     It "Should call Write-progress and return a decremented remaining value" {
